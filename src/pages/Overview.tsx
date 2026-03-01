@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { useSelectedTeam } from "@/contexts/TeamContext";
 import { DragDropContext, Droppable, type DropResult } from "@hello-pangea/dnd";
-import { Plus, Star, StarOff, Rows3, Columns2 } from "lucide-react";
+import { Plus, Star, StarOff, Rows3, Columns2, Settings2 } from "lucide-react";
+import { useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { format, startOfQuarter, endOfQuarter, subQuarters, addQuarters } from "date-fns";
 import {
   DropdownMenu,
@@ -355,10 +357,6 @@ export default function Overview() {
       label: "Financial Snapshot",
       content: <KpiCardsSection totalBudget={totalBudget} totalRevenue={totalRevenue} totalExpenses={totalExpenses} netProfit={netProfit} openTasks={openTasks} overdueTasks={overdueTasks} fmt={fmt} fmtSigned={fmtSigned} />,
     },
-    "company-budget": {
-      label: "Company Budget",
-      content: <CompanyBudgetSection />,
-    },
     "budget-utilization": {
       label: "Overall Company Spend",
       content: <BudgetUtilizationSection totalExpenses={totalExpenses} budgetRemaining={budgetRemaining} budgetUtilization={budgetUtilization} openTasks={openTasks} overdueTasks={overdueTasks} fmt={fmt} />,
@@ -412,27 +410,48 @@ export default function Overview() {
             Here's a snapshot of your label's overall health
           </p>
         </div>
-        <div className="flex items-center gap-1 text-xs font-medium">
-          <button
-            onClick={() => setLayout("single")}
-            className={cn(
-              "p-1.5 rounded-md transition-colors",
-              layout === "single" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-label="Single column"
-          >
-            <Rows3 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setLayout("two-column")}
-            className={cn(
-              "p-1.5 rounded-md transition-colors",
-              layout === "two-column" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-            aria-label="Two columns"
-          >
-            <Columns2 className="h-4 w-4" />
-          </button>
+        <div className="flex items-center gap-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <button
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                aria-label="Company budget settings"
+                title="Company Budget"
+              >
+                <Settings2 className="h-4 w-4" />
+              </button>
+            </SheetTrigger>
+            <SheetContent className="sm:max-w-lg overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Company Budget</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <CompanyBudgetSection />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <div className="flex items-center gap-1 text-xs font-medium">
+            <button
+              onClick={() => setLayout("single")}
+              className={cn(
+                "p-1.5 rounded-md transition-colors",
+                layout === "single" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+              aria-label="Single column"
+            >
+              <Rows3 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setLayout("two-column")}
+              className={cn(
+                "p-1.5 rounded-md transition-colors",
+                layout === "two-column" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+              aria-label="Two columns"
+            >
+              <Columns2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 

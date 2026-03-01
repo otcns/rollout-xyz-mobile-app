@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, User, Loader2, Check, ArrowLeft } from "lucide-react";
-import { useCreateProspect } from "@/hooks/useProspects";
+import { useCreateProspect, useUpdateProspect } from "@/hooks/useProspects";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ interface NewProspectDialogProps {
 
 export function NewProspectDialog({ open, onOpenChange, teamId }: NewProspectDialogProps) {
   const create = useCreateProspect();
+  const update = useUpdateProspect();
   const [step, setStep] = useState<"search" | "form">("search");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SpotifyArtist[]>([]);
@@ -51,6 +52,7 @@ export function NewProspectDialog({ open, onOpenChange, teamId }: NewProspectDia
     primary_genre: "",
     city: "",
     spotify_uri: "",
+    avatar_url: "",
     instagram: "",
     tiktok: "",
     youtube: "",
@@ -67,7 +69,7 @@ export function NewProspectDialog({ open, onOpenChange, teamId }: NewProspectDia
       setSearchQuery("");
       setSearchResults([]);
       setForm({
-        artist_name: "", primary_genre: "", city: "", spotify_uri: "",
+        artist_name: "", primary_genre: "", city: "", spotify_uri: "", avatar_url: "",
         instagram: "", tiktok: "", youtube: "", notes: "", stage: "contacted",
         priority: "medium", monthly_listeners: undefined,
       });
@@ -99,12 +101,14 @@ export function NewProspectDialog({ open, onOpenChange, teamId }: NewProspectDia
   }, [searchQuery, step]);
 
   const selectSpotifyArtist = (artist: SpotifyArtist) => {
+    const avatarUrl = artist.images?.[0]?.url || "";
     setForm((prev) => ({
       ...prev,
       artist_name: artist.name,
       primary_genre: artist.genres?.[0] || "",
       spotify_uri: `spotify:artist:${artist.id}`,
       monthly_listeners: artist.followers?.total,
+      avatar_url: avatarUrl,
     }));
     setStep("form");
   };
@@ -119,12 +123,13 @@ export function NewProspectDialog({ open, onOpenChange, teamId }: NewProspectDia
   const handleSubmit = async () => {
     if (!form.artist_name.trim() || !teamId) return;
     try {
-      await create.mutateAsync({
+      const prospect = await create.mutateAsync({
         team_id: teamId,
         artist_name: form.artist_name.trim(),
         primary_genre: form.primary_genre || undefined,
         city: form.city || undefined,
         spotify_uri: form.spotify_uri || undefined,
+        avatar_url: form.avatar_url || undefined,
         instagram: form.instagram || undefined,
         tiktok: form.tiktok || undefined,
         youtube: form.youtube || undefined,
@@ -135,6 +140,22 @@ export function NewProspectDialog({ open, onOpenChange, teamId }: NewProspectDia
       });
       toast.success("Prospect added!");
       onOpenChange(false);
+
+      // Async: fetch real monthly listeners from Spotify if we have a spotify_uri
+      if (form.spotify_uri && prospect?.id) {
+        const spotifyId = form.spotify_uri.replace("spotify:artist:", "");
+        supabase.functions.invoke("spotify-artist", {
+          body: { spotify_id: spotifyId },
+        }).then(({ data }) => {
+          if (data?.monthly_listeners && data.monthly_listeners > 0) {
+            update.mutate({
+              id: prospect.id,
+              monthly_listeners: data.monthly_listeners,
+              avatar_url: data.images?.[0]?.url || form.avatar_url || undefined,
+            });
+          }
+        }).catch(() => { /* silent - best effort */ });
+      }
     } catch (err: any) {
       toast.error(err.message);
     }

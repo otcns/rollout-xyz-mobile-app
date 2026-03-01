@@ -95,17 +95,6 @@ export function StaffMetricsSection({ members, fmt, teamId }: StaffMetricsSectio
                     <span className="font-semibold text-sm truncate">{m.fullName || "Unnamed"}</span>
                     <span className="caption capitalize">{m.role.replace("_", " ")}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1">
-                      <ListTodo className="h-3 w-3" /> {m.tasksOpen} open
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {m.tasksCompletedLast7d} last 7d
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3" /> {m.tasksCompletedAllTime} all time
-                    </span>
-                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -120,6 +109,19 @@ export function StaffMetricsSection({ members, fmt, teamId }: StaffMetricsSectio
                   )}
                   <ScoreCircle score={m.productivityScore} />
                 </div>
+              </div>
+
+              {/* Task stats row */}
+              <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 pl-[52px]">
+                <span className="flex items-center gap-1">
+                  <ListTodo className="h-3 w-3" /> {m.tasksOpen} open
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" /> {m.tasksCompletedLast7d} last 7d
+                </span>
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> {m.tasksCompletedAllTime} all time
+                </span>
               </div>
 
               {/* Completion bar */}

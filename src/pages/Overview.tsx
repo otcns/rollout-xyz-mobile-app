@@ -24,6 +24,7 @@ import { StaffProductivityWidget } from "@/components/overview/StaffProductivity
 import { ARPipelineWidget } from "@/components/overview/ARPipelineWidget";
 import { StreamingTrendsWidget } from "@/components/overview/StreamingTrendsWidget";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { CompanyBudgetSection } from "@/components/overview/CompanyBudgetSection";
 import type { StaffMember } from "@/components/overview/StaffMetricsSection";
 
 
@@ -353,6 +354,10 @@ export default function Overview() {
     kpis: {
       label: "Financial Snapshot",
       content: <KpiCardsSection totalBudget={totalBudget} totalRevenue={totalRevenue} totalExpenses={totalExpenses} netProfit={netProfit} openTasks={openTasks} overdueTasks={overdueTasks} fmt={fmt} fmtSigned={fmtSigned} />,
+    },
+    "company-budget": {
+      label: "Company Budget",
+      content: <CompanyBudgetSection />,
     },
     "budget-utilization": {
       label: "Overall Company Spend",

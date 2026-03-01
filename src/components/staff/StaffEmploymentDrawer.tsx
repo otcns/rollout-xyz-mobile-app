@@ -1,0 +1,221 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { format } from "date-fns";
+
+interface StaffEmploymentDrawerProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: string;
+  teamId: string;
+  staffName: string;
+}
+
+export function StaffEmploymentDrawer({ open, onOpenChange, userId, teamId, staffName }: StaffEmploymentDrawerProps) {
+  const queryClient = useQueryClient();
+
+  const { data: employment, isLoading } = useQuery({
+    queryKey: ["staff-employment", userId, teamId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("staff_employment")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("team_id", teamId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!userId && !!teamId,
+  });
+
+  const [form, setForm] = useState({
+    employment_type: "w2",
+    job_title: "",
+    annual_salary: "",
+    monthly_retainer: "",
+    payment_schedule: "bi-weekly",
+    start_date: "",
+  });
+
+  useEffect(() => {
+    if (employment) {
+      setForm({
+        employment_type: employment.employment_type || "w2",
+        job_title: employment.job_title || "",
+        annual_salary: employment.annual_salary?.toString() || "",
+        monthly_retainer: employment.monthly_retainer?.toString() || "",
+        payment_schedule: employment.payment_schedule || "bi-weekly",
+        start_date: employment.start_date || "",
+      });
+    } else {
+      setForm({
+        employment_type: "w2",
+        job_title: "",
+        annual_salary: "",
+        monthly_retainer: "",
+        payment_schedule: "bi-weekly",
+        start_date: "",
+      });
+    }
+  }, [employment]);
+
+  const upsert = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        user_id: userId,
+        team_id: teamId,
+        employment_type: form.employment_type,
+        job_title: form.job_title || null,
+        annual_salary: form.annual_salary ? parseFloat(form.annual_salary) : null,
+        monthly_retainer: form.monthly_retainer ? parseFloat(form.monthly_retainer) : null,
+        payment_schedule: form.payment_schedule,
+        start_date: form.start_date || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (employment) {
+        const { error } = await (supabase as any)
+          .from("staff_employment")
+          .update(payload)
+          .eq("id", employment.id);
+        if (error) throw error;
+      } else {
+        const { error } = await (supabase as any)
+          .from("staff_employment")
+          .insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["staff-employment"] });
+      toast.success("Employment info saved");
+      onOpenChange(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const annualCost = form.employment_type === "w2"
+    ? (parseFloat(form.annual_salary) || 0)
+    : (parseFloat(form.monthly_retainer) || 0) * 12;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+        <SheetHeader className="mb-6">
+          <SheetTitle>{staffName}</SheetTitle>
+          <p className="text-sm text-muted-foreground">Employment Information</p>
+        </SheetHeader>
+
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        ) : (
+          <div className="space-y-5">
+            {/* Employment Type */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Employment Type</Label>
+              <Select value={form.employment_type} onValueChange={(v) => setForm({ ...form, employment_type: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="w2">W-2 Employee</SelectItem>
+                  <SelectItem value="1099">1099 Contractor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Job Title */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Job Title</Label>
+              <Input
+                value={form.job_title}
+                onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+                placeholder="e.g. A&R Manager"
+              />
+            </div>
+
+            {/* Pay Rate */}
+            {form.employment_type === "w2" ? (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Annual Salary</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    type="number"
+                    value={form.annual_salary}
+                    onChange={(e) => setForm({ ...form, annual_salary: e.target.value })}
+                    placeholder="75,000"
+                    className="pl-7"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Monthly Retainer</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    type="number"
+                    value={form.monthly_retainer}
+                    onChange={(e) => setForm({ ...form, monthly_retainer: e.target.value })}
+                    placeholder="5,000"
+                    className="pl-7"
+                  />
+                </div>
+                {annualCost > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Annual cost: ${annualCost.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Payment Schedule */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Payment Schedule</Label>
+              <Select value={form.payment_schedule} onValueChange={(v) => setForm({ ...form, payment_schedule: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
+                  <SelectItem value="semi-monthly">Semi-monthly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Start Date */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold">Start Date</Label>
+              <Input
+                type="date"
+                value={form.start_date}
+                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+              />
+            </div>
+
+            {/* Summary */}
+            {annualCost > 0 && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Annual Cost Summary</p>
+                <p className="text-lg font-bold">${annualCost.toLocaleString()}/yr</p>
+                <p className="text-xs text-muted-foreground">
+                  ~${Math.round(annualCost / 12).toLocaleString()}/mo
+                </p>
+              </div>
+            )}
+
+            <Button onClick={() => upsert.mutate()} className="w-full" disabled={upsert.isPending}>
+              {employment ? "Update" : "Save"} Employment Info
+            </Button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}

@@ -139,7 +139,7 @@ export default function Staff() {
           Team productivity and performance metrics
         </p>
       </div>
-      <StaffMetricsSection members={staffMembers} fmt={fmt} />
+      <StaffMetricsSection members={staffMembers} fmt={fmt} teamId={teamId ?? undefined} />
     </AppLayout>
   );
 }

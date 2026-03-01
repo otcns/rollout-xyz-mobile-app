@@ -578,6 +578,89 @@ export type Database = {
         }
         Relationships: []
       }
+      company_budget_categories: {
+        Row: {
+          annual_budget: number
+          created_at: string
+          id: string
+          name: string
+          team_id: string
+        }
+        Insert: {
+          annual_budget?: number
+          created_at?: string
+          id?: string
+          name: string
+          team_id: string
+        }
+        Update: {
+          annual_budget?: number
+          created_at?: string
+          id?: string
+          name?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_budget_categories_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_expenses: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          is_recurring: boolean
+          recurrence_period: string | null
+          team_id: string
+        }
+        Insert: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description: string
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean
+          recurrence_period?: string | null
+          team_id: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          is_recurring?: boolean
+          recurrence_period?: string | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "company_budget_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_expenses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_categories: {
         Row: {
           artist_id: string
@@ -1107,6 +1190,56 @@ export type Database = {
           },
         ]
       }
+      staff_employment: {
+        Row: {
+          annual_salary: number | null
+          created_at: string
+          employment_type: string
+          id: string
+          job_title: string | null
+          monthly_retainer: number | null
+          payment_schedule: string | null
+          start_date: string | null
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_salary?: number | null
+          created_at?: string
+          employment_type?: string
+          id?: string
+          job_title?: string | null
+          monthly_retainer?: number | null
+          payment_schedule?: string | null
+          start_date?: string | null
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_salary?: number | null
+          created_at?: string
+          employment_type?: string
+          id?: string
+          job_title?: string | null
+          monthly_retainer?: number | null
+          payment_schedule?: string | null
+          start_date?: string | null
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_employment_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           artist_id: string | null
@@ -1211,6 +1344,7 @@ export type Database = {
       }
       teams: {
         Row: {
+          annual_budget: number | null
           avatar_url: string | null
           created_at: string
           created_by: string | null
@@ -1218,6 +1352,7 @@ export type Database = {
           name: string
         }
         Insert: {
+          annual_budget?: number | null
           avatar_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -1225,6 +1360,7 @@ export type Database = {
           name: string
         }
         Update: {
+          annual_budget?: number | null
           avatar_url?: string | null
           created_at?: string
           created_by?: string | null

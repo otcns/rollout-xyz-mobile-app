@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, ListTodo, DollarSign } from "lucide-react";
+import { CheckCircle2, ListTodo, DollarSign, Info } from "lucide-react";
+import { StaffEmploymentDrawer } from "@/components/staff/StaffEmploymentDrawer";
 
 export interface StaffMember {
   userId: string;
@@ -21,6 +23,7 @@ export interface StaffMember {
 interface StaffMetricsSectionProps {
   members: StaffMember[];
   fmt: (n: number) => string;
+  teamId?: string;
 }
 
 function ScoreCircle({ score }: { score: number }) {
@@ -53,7 +56,8 @@ function ScoreCircle({ score }: { score: number }) {
   );
 }
 
-export function StaffMetricsSection({ members, fmt }: StaffMetricsSectionProps) {
+export function StaffMetricsSection({ members, fmt, teamId }: StaffMetricsSectionProps) {
+  const [drawerUser, setDrawerUser] = useState<{ id: string; name: string } | null>(null);
   if (members.length === 0) {
     return (
       <div className="text-center py-8 text-sm text-muted-foreground">
@@ -104,7 +108,18 @@ export function StaffMetricsSection({ members, fmt }: StaffMetricsSectionProps) 
                   </div>
                 </div>
 
-                <ScoreCircle score={m.productivityScore} />
+                <div className="flex items-center gap-2 shrink-0">
+                  {teamId && (
+                    <button
+                      onClick={() => setDrawerUser({ id: m.userId, name: m.fullName })}
+                      className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                      title="Employment info"
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                  )}
+                  <ScoreCircle score={m.productivityScore} />
+                </div>
               </div>
 
               {/* Completion bar */}
@@ -129,6 +144,16 @@ export function StaffMetricsSection({ members, fmt }: StaffMetricsSectionProps) 
           );
         })}
       </div>
+
+      {teamId && drawerUser && (
+        <StaffEmploymentDrawer
+          open={!!drawerUser}
+          onOpenChange={(open) => { if (!open) setDrawerUser(null); }}
+          userId={drawerUser.id}
+          teamId={teamId}
+          staffName={drawerUser.name}
+        />
+      )}
     </div>
   );
 }

@@ -28,11 +28,14 @@ import { StreamingTrendsWidget } from "@/components/overview/StreamingTrendsWidg
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { CompanyBudgetSection } from "@/components/overview/CompanyBudgetSection";
 import { BuildYourCompany } from "@/components/overview/BuildYourCompany";
+import { AgendaContent } from "@/components/overview/AgendaContent";
+import { StaffContent } from "@/components/overview/StaffContent";
 import type { StaffMember } from "@/components/overview/StaffMetricsSection";
 
 
 export default function Overview() {
   const { selectedTeamId: teamId } = useSelectedTeam();
+  const [companyTab, setCompanyTab] = useState<"dashboard" | "agenda" | "staff">("dashboard");
 
   // Fetch team to check company_type
   const { data: team, refetch: refetchTeam } = useQuery({
@@ -423,6 +426,27 @@ export default function Overview() {
         <BuildYourCompany teamId={teamId} onComplete={() => refetchTeam()} />
       ) : (
       <>
+      {/* Company tabs */}
+      <div className="flex items-center gap-1 mb-5">
+        {(["dashboard", "agenda", "staff"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setCompanyTab(tab)}
+            className={cn("px-4 py-1.5 rounded-full text-sm font-medium transition-colors capitalize",
+              companyTab === tab ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+            )}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {companyTab === "agenda" ? (
+        <AgendaContent />
+      ) : companyTab === "staff" ? (
+        <StaffContent />
+      ) : (
+      <>
       {/* Welcome */}
       <div className="mb-8 flex items-start justify-between">
         <div>
@@ -585,6 +609,8 @@ export default function Overview() {
             </div>
           )}
         </>
+      )}
+      </>
       )}
       </>
       )}

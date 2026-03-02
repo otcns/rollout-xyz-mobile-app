@@ -239,9 +239,7 @@ export default function Roster() {
                             <RosterFolderCard
                               folder={folder}
                               artists={fArtists}
-                              allArtists={artists}
-                              onAddArtist={(artistId) => handleAddArtistToFolder(artistId, folder.id)}
-                              onRemoveArtist={handleRemoveArtistFromFolder}
+                              onOpenAddDialog={() => setShowAddArtist(true)}
                               onDelete={() => handleDeleteFolder(folder.id)}
                               onClick={() => setSelectedFolderId(folder.id)}
                               isDraggingOver={snapshot.isDraggingOver}

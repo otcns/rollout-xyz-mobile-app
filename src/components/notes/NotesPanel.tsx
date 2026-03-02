@@ -27,7 +27,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 
-// Custom extension to remap Cmd+S to strikethrough
+// Custom extension to remap Cmd+S to strikethrough and stop propagation on formatting shortcuts
 const StrikethroughShortcut = Extension.create({
   name: "strikethroughShortcut",
   addKeyboardShortcuts() {
@@ -39,6 +39,13 @@ const StrikethroughShortcut = Extension.create({
     };
   },
 });
+
+// Wrapper to stop propagation of formatting shortcuts so they don't collapse the sidebar
+const editorKeyDownHandler = (e: React.KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && ["b", "i", "u", "s"].includes(e.key.toLowerCase())) {
+    e.stopPropagation();
+  }
+};
 
 export function NotesPanel() {
   const { user } = useAuth();
@@ -481,7 +488,9 @@ function NoteEditor({ note, isOwner, onTitleBlur, onTitleChange, onContentChange
           readOnly={!isOwner}
           className="w-full text-xl sm:text-2xl font-bold text-foreground bg-transparent outline-none border-none mb-3 placeholder:text-muted-foreground/40"
         />
-        <EditorContent editor={editor} />
+        <div onKeyDown={editorKeyDownHandler}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </div>
   );

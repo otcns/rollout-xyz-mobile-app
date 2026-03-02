@@ -1,9 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DollarSign, MoreVertical, Trash2, UserPlus, UserMinus } from "lucide-react";
+import { DollarSign, Trash2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
 function formatNum(n: number): string {
@@ -15,22 +12,18 @@ function formatNum(n: number): string {
 interface RosterFolderCardProps {
   folder: { id: string; name: string };
   artists: any[];
-  allArtists: any[];
-  onAddArtist: (artistId: string) => void;
-  onRemoveArtist: (artistId: string) => void;
+  onOpenAddDialog?: () => void;
   onDelete: () => void;
   onClick: () => void;
   isDraggingOver?: boolean;
 }
 
-export function RosterFolderCard({ folder, artists, allArtists, onAddArtist, onRemoveArtist, onDelete, onClick, isDraggingOver }: RosterFolderCardProps) {
+export function RosterFolderCard({ folder, artists, onOpenAddDialog, onDelete, onClick, isDraggingOver }: RosterFolderCardProps) {
   const displayArtists = artists.slice(0, 4);
   const totalSpent = artists.reduce((sum, a) => {
     const budgets = a.budgets || [];
     return sum + budgets.reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
   }, 0);
-
-  const availableArtists = allArtists.filter((a) => a.folder_id !== folder.id);
 
   return (
     <div
@@ -45,55 +38,24 @@ export function RosterFolderCard({ folder, artists, allArtists, onAddArtist, onR
       <div className="p-4 pb-3">
         <div className="flex items-start justify-between gap-1 mb-3">
           <h3 className="text-sm font-semibold truncate">{folder.name}</h3>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              {availableArtists.length > 0 && (
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="gap-2">
-                    <UserPlus className="h-3.5 w-3.5" /> Add Artist
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-60 overflow-y-auto">
-                    {availableArtists.map((a) => (
-                      <DropdownMenuItem key={a.id} onClick={() => onAddArtist(a.id)} className="gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={a.avatar_url ?? undefined} />
-                          <AvatarFallback className="text-[9px]">{a.name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        {a.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              )}
-              {artists.length > 0 && (
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="gap-2">
-                    <UserMinus className="h-3.5 w-3.5" /> Remove Artist
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="max-h-60 overflow-y-auto">
-                    {artists.map((a) => (
-                      <DropdownMenuItem key={a.id} onClick={() => onRemoveArtist(a.id)} className="gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={a.avatar_url ?? undefined} />
-                          <AvatarFallback className="text-[9px]">{a.name?.[0]}</AvatarFallback>
-                        </Avatar>
-                        {a.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive gap-2" onClick={onDelete}>
-                <Trash2 className="h-3.5 w-3.5" /> Delete Folder
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={(e) => { e.stopPropagation(); onOpenAddDialog?.(); }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-1.5 mb-3">

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { InviteMemberDialog } from "./InviteMemberDialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,14 +8,6 @@ import { useTeams } from "@/hooks/useTeams";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -32,11 +25,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Copy, Check, Trash2, Upload, Camera } from "lucide-react";
+import { UserPlus, Trash2, Upload, Camera } from "lucide-react";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
 
 interface TeamMember {
   user_id: string;
@@ -66,12 +57,14 @@ const roleLabelMap: Record<string, string> = {
   team_owner: "Team Owner",
   manager: "Manager",
   artist: "Artist",
+  guest: "Guest",
 };
 
 const roleDescriptionMap: Record<string, string> = {
   team_owner: "Full access to all functions including budgets, users, plans, account deletion.",
   manager: "Broad permissions for budgets, plans, and tasks.",
   artist: "Restricted role with access limited to viewing certain information only.",
+  guest: "View-only access. Ideal for PR, videographers, and external collaborators.",
 };
 
 const permissionLabelMap: Record<string, string> = {
@@ -89,11 +82,6 @@ export function TeamManagement({ showSection = "members" }: { showSection?: "mem
   const queryClient = useQueryClient();
 
   const [showInvite, setShowInvite] = useState(false);
-  const [inviteRole, setInviteRole] = useState<string>("manager");
-  const [addToStaff, setAddToStaff] = useState(false);
-  const [staffEmploymentType, setStaffEmploymentType] = useState("w2");
-  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [uploadingTeamPhoto, setUploadingTeamPhoto] = useState(false);
   const teamPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -240,32 +228,6 @@ export function TeamManagement({ showSection = "members" }: { showSection?: "mem
     },
   });
 
-  const createInvite = useMutation({
-    mutationFn: async (role: string) => {
-      const { data, error } = await (supabase as any)
-        .from("invite_links")
-        .insert({
-          team_id: teamId!,
-          invited_by: user!.id,
-          role: role as any,
-          add_to_staff: addToStaff,
-          staff_employment_type: addToStaff ? staffEmploymentType : null,
-        })
-        .select("token")
-        .single();
-      if (error) throw error;
-      return data.token;
-    },
-    onSuccess: (token) => {
-      const baseUrl = "https://rollout.cc";
-      const link = `${baseUrl}/join/${token}`;
-      setGeneratedLink(link);
-    },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to create invite");
-    },
-  });
-
   const handleTeamPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !teamId) return;
@@ -315,29 +277,6 @@ export function TeamManagement({ showSection = "members" }: { showSection?: "mem
     } finally {
       setUploadingTeamPhoto(false);
     }
-  };
-
-  const handleCreateInvite = () => {
-    setCopied(false);
-    setGeneratedLink(null);
-    createInvite.mutate(inviteRole);
-  };
-
-  const handleCopy = async () => {
-    if (!generatedLink) return;
-    await navigator.clipboard.writeText(generatedLink);
-    setCopied(true);
-    toast.success("Link copied!");
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleClose = () => {
-    setShowInvite(false);
-    setGeneratedLink(null);
-    setCopied(false);
-    setInviteRole("manager");
-    setAddToStaff(false);
-    setStaffEmploymentType("w2");
   };
 
   if (isLoading) {
@@ -515,6 +454,14 @@ export function TeamManagement({ showSection = "members" }: { showSection?: "mem
                           </div>
                         </div>
                       </SelectItem>
+                      <SelectItem value="guest">
+                        <div>
+                          <div className="font-medium">Guest</div>
+                          <div className="text-xs text-muted-foreground">
+                            {roleDescriptionMap.guest}
+                          </div>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
@@ -602,108 +549,7 @@ export function TeamManagement({ showSection = "members" }: { showSection?: "mem
       </div>
 
       {/* Invite Dialog */}
-      <Dialog open={showInvite} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invite a team member</DialogTitle>
-            <DialogDescription>
-              Generate a shareable invite link. It expires in 7 days.
-            </DialogDescription>
-          </DialogHeader>
-
-          {!generatedLink ? (
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select value={inviteRole} onValueChange={setInviteRole}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="artist">Artist</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {inviteRole === "manager"
-                    ? "Managers can view and edit all artists on the team."
-                    : "Artists have limited access to assigned artists only."}
-                </p>
-              </div>
-
-              {/* Add to Staff toggle */}
-              <div className="space-y-3 rounded-lg border border-border p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Add to Staff</Label>
-                    <p className="text-xs text-muted-foreground">Track employment &amp; payroll info</p>
-                  </div>
-                  <Switch checked={addToStaff} onCheckedChange={setAddToStaff} />
-                </div>
-
-                {addToStaff && (
-                  <div className="space-y-2 pt-1">
-                    <Label className="text-xs">Employment Type</Label>
-                    <Select value={staffEmploymentType} onValueChange={setStaffEmploymentType}>
-                      <SelectTrigger className="h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="w2">W-2 Employee</SelectItem>
-                        <SelectItem value="1099">1099 Contractor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter>
-                <Button
-                  onClick={handleCreateInvite}
-                  disabled={createInvite.isPending}
-                >
-                  {createInvite.isPending ? "Generating..." : "Generate Link"}
-                </Button>
-              </DialogFooter>
-            </div>
-          ) : (
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Invite Link</Label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={generatedLink}
-                    className="text-xs"
-                    onFocus={(e) => e.target.select()}
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleCopy}
-                    className="shrink-0"
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Share this link with the person you'd like to invite. They'll be added as a{" "}
-                  <span className="font-medium">{roleLabelMap[inviteRole] ?? inviteRole}</span>.
-                </p>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={handleClose}>
-                  Done
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <InviteMemberDialog open={showInvite} onOpenChange={setShowInvite} />
 
       {/* Delete confirmation */}
       <AlertDialog

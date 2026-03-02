@@ -1,12 +1,20 @@
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { useSelectedTeam } from "@/contexts/TeamContext";
+import { useTeams } from "@/hooks/useTeams";
 import { StaffMetricsSection, type StaffMember } from "@/components/overview/StaffMetricsSection";
+import { InviteMemberDialog } from "@/components/settings/InviteMemberDialog";
+import { Button } from "@/components/ui/button";
+import { UserPlus } from "lucide-react";
 
 export default function Staff() {
   const { selectedTeamId: teamId } = useSelectedTeam();
+  const { data: teams = [] } = useTeams();
+  const myRole = teams.find((t) => t.id === teamId)?.role ?? null;
+  const canManage = myRole === "team_owner" || myRole === "manager";
+  const [showInvite, setShowInvite] = useState(false);
 
   const { data: memberships = [] } = useQuery({
     queryKey: ["staff-memberships", teamId],
@@ -133,13 +141,22 @@ export default function Staff() {
 
   return (
     <AppLayout title="Staff">
-      <div className="mb-6">
-        <h1 className="text-foreground">Staff</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Team productivity and performance metrics
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-foreground">Staff</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Team productivity and performance metrics
+          </p>
+        </div>
+        {canManage && (
+          <Button onClick={() => setShowInvite(true)}>
+            <UserPlus className="h-4 w-4 mr-1.5" />
+            Add Member
+          </Button>
+        )}
       </div>
       <StaffMetricsSection members={staffMembers} fmt={fmt} teamId={teamId ?? undefined} />
+      <InviteMemberDialog open={showInvite} onOpenChange={setShowInvite} />
     </AppLayout>
   );
 }

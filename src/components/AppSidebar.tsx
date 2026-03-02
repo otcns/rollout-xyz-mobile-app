@@ -63,11 +63,8 @@ export function AppSidebar({ selectedTeamId, onSelectTeam }: AppSidebarProps) {
 
   const navItems = [
     { to: "/overview", icon: Building2, label: "Company" },
-    { to: "/roster", icon: LayoutGrid, label: "Roster" },
+    { to: "/roster", icon: LayoutGrid, label: "Artists" },
     { to: "/my-work", icon: CheckCheck, label: "My Work" },
-    { to: "/agenda", icon: ClipboardList, label: "Agenda" },
-    { to: "/staff", icon: Users, label: "Staff" },
-    { to: "/ar", icon: Radar, label: "A&R" },
   ];
 
   return (

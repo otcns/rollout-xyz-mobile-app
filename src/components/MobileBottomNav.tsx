@@ -11,7 +11,7 @@ import {
 
 const mainItems = [
   { to: "/overview", icon: Home, label: "Home" },
-  { to: "/roster", icon: FolderOpen, label: "Roster" },
+  { to: "/roster", icon: FolderOpen, label: "Artists" },
 ];
 
 const rightItems = [
@@ -19,9 +19,6 @@ const rightItems = [
 ];
 
 const moreItems = [
-  { to: "/ar", icon: Radar, label: "A&R" },
-  { to: "/staff", icon: Users, label: "Staff" },
-  { to: "/agenda", icon: ClipboardList, label: "Agenda" },
   { to: "/settings", icon: User, label: "Settings" },
 ];
 

@@ -52,11 +52,11 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/roster" element={<ProtectedRoute><Roster /></ProtectedRoute>} />
       <Route path="/overview" element={<ProtectedRoute><Overview /></ProtectedRoute>} />
-      <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
+      <Route path="/agenda" element={<Navigate to="/overview" replace />} />
       <Route path="/my-work" element={<ProtectedRoute><MyWork /></ProtectedRoute>} />
       <Route path="/roster/:artistId" element={<ProtectedRoute><ArtistDetail /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-      <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+      <Route path="/staff" element={<Navigate to="/overview" replace />} />
       <Route path="/ar" element={<ProtectedRoute><ARList /></ProtectedRoute>} />
       <Route path="/ar/:prospectId" element={<Navigate to="/ar" replace />} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

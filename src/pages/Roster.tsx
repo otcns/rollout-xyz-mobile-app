@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { AppLayout } from "@/components/AppLayout";
+import { ARContent } from "@/components/ar/ARContent";
 import { useArtists, useCreateArtist } from "@/hooks/useArtists";
 import { useCreateTeam } from "@/hooks/useTeams";
 import { useSelectedTeam } from "@/contexts/TeamContext";
@@ -16,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FolderPlus, ArrowLeft, ArrowUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArtistCard } from "@/components/roster/ArtistCard";
 import { RosterFolderCard } from "@/components/roster/RosterFolderCard";
@@ -65,6 +67,7 @@ export default function Roster() {
   const setArtistFolder = useSetArtistFolder();
   
 
+  const [activeTab, setActiveTab] = useState<"roster" | "ar">(searchParams.get("tab") === "ar" ? "ar" : "roster");
   const [showAddArtist, setShowAddArtist] = useState(false);
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -187,7 +190,7 @@ export default function Roster() {
   // Folder detail view
   if (selectedFolderId && selectedFolder) {
     return (
-      <AppLayout title="Roster">
+      <AppLayout title="Artists">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedFolderId(null)}>
@@ -233,7 +236,31 @@ export default function Roster() {
 
   // Main roster view with DnD
   return (
-    <AppLayout title="Roster">
+    <AppLayout title="Artists">
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-5">
+        <button
+          onClick={() => setActiveTab("roster")}
+          className={cn("px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
+            activeTab === "roster" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+          )}
+        >
+          Current Roster
+        </button>
+        <button
+          onClick={() => setActiveTab("ar")}
+          className={cn("px-4 py-1.5 rounded-full text-sm font-medium transition-colors",
+            activeTab === "ar" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+          )}
+        >
+          A&R Signings
+        </button>
+      </div>
+
+      {activeTab === "ar" ? (
+        <ARContent />
+      ) : (
+      <>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {SortSelect}
@@ -352,6 +379,8 @@ export default function Roster() {
         onAdd={handleAddToRoster}
         onCreateManual={handleCreateManual}
       />
+      </>
+      )}
     </AppLayout>
   );
 }

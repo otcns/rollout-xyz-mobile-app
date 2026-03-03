@@ -1,76 +1,86 @@
 
 
-# Seed Comprehensive Dummy Data for $500K Record Label
+## Split Sheet Wizard Redesign
 
-## Current State
-- Team "Club Hous" (`c6bed68e-7740-4b31-af16-b619126d1fe6`) has 6 artists, 3 real users, 1 staff_employment record (no salary), 0 company expenses, 6 budget categories (all $0), and existing artist budgets for 4 artists.
-- The Finance tab shows no meaningful data because amounts are zero or missing.
+### Problem
+The current flow requires too many discrete steps: click "Add Release" → type name + select type → create → then separately add songs one by one → then separately add contributors one by one per song. Each step feels like starting over.
 
-## Data Seeding Plan
+### New Flow: Inline Step-by-Step Wizard
 
-### 1. Update Team Annual Budget
-Set `annual_budget = 500000` ($500K label).
+The wizard replaces the current "new project" form and expands inline within the Splits tab (no new page). It progresses through steps with Enter/Continue, collapsing completed steps above.
 
-### 2. Company Budget Categories
-Update the 6 existing categories with realistic budgets:
-- Staff Payroll: $240,000
-- Marketing: $60,000
-- Software & Tools: $18,000
-- Office & Rent: $48,000
-- Travel & Entertainment: $36,000
-- Legal & Accounting: $24,000
+```text
+┌─────────────────────────────────────────────────┐
+│  Step 1: Release Type                           │
+│  [ Single ]  [ EP ]  [ Album ]                  │
+│  (three buttons, click to select & advance)     │
+├─────────────────────────────────────────────────┤
+│  Step 2: Release Name                           │
+│  [ Love Gun II            ]  (auto-focus, Enter)│
+├─────────────────────────────────────────────────┤
+│  Step 3: Song Titles                            │
+│  Defaults: 1 for Single, 7 for EP, 12 for Album│
+│  1. [ Track title... ] ←auto-focus              │
+│  2. [ Track title... ]                          │
+│  ...                                            │
+│  + Add another track                            │
+│  [ Continue → ]                                 │
+├─────────────────────────────────────────────────┤
+│  Step 4: Contributors (song-by-song)            │
+│  ┌ Song 1: "Track Title" ─────────────────────┐ │
+│  │ Producer: [ name... ] (autocomplete)       │ │
+│  │   ☑ Track 1  ☐ Track 2  ☐ Track 3  ...    │ │
+│  │   [ % ] optional inline                    │ │
+│  │ + Add another producer                     │ │
+│  │                                            │ │
+│  │ Writer: [ name... ]                        │ │
+│  │   ☑ Track 1  ☐ Track 2  ...               │ │
+│  │   [ % ] optional                           │ │
+│  │ + Add another writer                       │ │
+│  │                                            │ │
+│  │ Performer: [ name... ]                     │ │
+│  │ + Add another performer                    │ │
+│  │                                            │ │
+│  │ [ Next Song → ]                            │ │
+│  └────────────────────────────────────────────┘ │
+│  (repeat for each song, pre-filling carry-over) │
+├─────────────────────────────────────────────────┤
+│  Step 5: Review & Save                          │
+│  Summary card showing all songs + contributors  │
+│  [ Create Split Sheet ]                         │
+└─────────────────────────────────────────────────┘
+```
 
-### 3. Staff Employment (20 records)
-**Limitation**: `staff_employment.user_id` is required. Only 3 real users exist. I'll create 20 staff records using generated UUIDs — the payroll table will show "Unknown" for names but all salary/retainer figures will render correctly in KPIs and totals.
+### Key UX Details
 
-**10 W-2 Employees** (total ~$180K/yr):
-- Head of A&R: $45,000
-- Marketing Director: $40,000  
-- Creative Director: $38,000
-- A&R Coordinator: $30,000
-- Social Media Manager: $28,000
-- Finance Manager: $35,000
-- Operations Manager: $32,000
-- Content Producer: $28,000
-- Tour Coordinator: $26,000
-- Admin Assistant: $22,000
+1. **Step 1 (Release Type)**: Three large-ish buttons. Clicking one immediately advances to Step 2. No separate "Next" button.
 
-**10 1099 Contractors** (total ~$5K/mo = $60K/yr):
-- Graphic Designer: $800/mo
-- Videographer: $700/mo
-- Mixing Engineer: $600/mo
-- PR Consultant: $500/mo
-- Web Developer: $450/mo
-- Photographer: $400/mo
-- Radio Promoter: $350/mo
-- Stylist: $300/mo
-- Session Musician: $250/mo
-- Social Media Freelancer: $200/mo
+2. **Step 2 (Release Name)**: Single auto-focused input. Press Enter to advance. Placeholder: "Name this release..."
 
-### 4. Company Expenses (~30 records)
-Spread across the 6 categories over the past 6 months. Realistic line items: Slack subscription, Adobe CC, studio rent, flight to SXSW, attorney retainer, Meta ads, etc.
+3. **Step 3 (Song Titles)**: Pre-populated empty inputs based on type (1/7/12). Tab or Enter moves to next input. "+ Add another track" appends more. Empty titles are stripped on Continue. At least 1 required.
 
-### 5. Artist Revenue & Expense Scenario
+4. **Step 4 (Contributors per song)**: Song-by-song with three role sections (Producer, Writer, Performer). For each:
+   - Type a name → autocomplete from saved `split_contributors` table
+   - After entering a name, checkboxes appear showing all other song titles so you can quickly assign the same person to multiple tracks
+   - Optional inline `%` field next to each name (not required)
+   - "+ Add another [role]" to add multiple producers/writers/performers
+   - "Next Song →" advances. If a contributor was assigned to Song 2 via checkboxes from Song 1, they appear pre-filled on Song 2
+   - New names are auto-saved to `split_contributors` for future autocomplete
 
-| Artist | Budget | Revenue | Expenses | Net | Profile |
-|--------|--------|---------|----------|-----|---------|
-| Pote Baby | $75K | $120K | $62K | +$58K | Star artist, profitable |
-| SMV | $66K | $85K | $48K | +$37K | Solid earner, profitable |
-| Jurp | $54.5K | $35K | $52K | -$17K | Revenue but not profitable |
-| Doogie | $35K | $18K | $30K | -$12K | Revenue but not profitable |
-| The Weeknd | $0 (add $25K) | $0 | $15K | -$15K | New signing, no revenue yet |
+5. **Step 5 (Review)**: Quick summary table. Click "Create Split Sheet" to batch-insert the project, songs, and entries.
 
-For each artist: 10-20 transaction records (mix of expenses and revenue), spanning the past 6 months, linked to their existing budget categories where possible. Include 3-5 "pending" approval transactions to show the approval workflow.
+### Technical Plan
 
-### 6. Budgets for The Weeknd
-Add 4 budget categories: Recording ($12K), Marketing ($6K), Content ($4K), Travel ($3K).
+**New component**: `src/components/artist/SplitWizard.tsx`
+- Multi-step state machine with `step` state (1-5)
+- Local state accumulates all data before a single batch save
+- On final submit: create project → create songs → create contributors (if new) → create entries
 
-## Execution
-All done via data INSERT/UPDATE statements using the insert tool (not migrations). Approximately:
-- 1 team UPDATE
-- 6 category UPDATEs  
-- 20 staff_employment INSERTs
-- ~30 company_expense INSERTs
-- 4 budget INSERTs (The Weeknd)
-- ~80 transaction INSERTs
+**Modified files**:
+- `SplitsTab.tsx`: Replace inline form with `<SplitWizard>` when `showNew` is true
+- `useSplits.ts`: Add a `useCreateSplitBatch` mutation that inserts project + songs + entries in sequence
+
+**Contributor autocomplete**: Already works via `split_contributors` table. The wizard will use `useSplitContributors(teamId)` for suggestions as the user types, and auto-insert new names.
+
+**No database changes needed** — the existing `split_projects`, `split_songs`, `split_entries`, and `split_contributors` tables support this flow as-is.
 

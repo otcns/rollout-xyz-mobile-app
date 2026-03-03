@@ -437,9 +437,6 @@ export default function JoinTeam() {
       </motion.div>
 
       <div className="flex-1" />
-      <div className="relative z-10 pb-12">
-        <img src={rolloutLogoWhite} alt="Rollout" className="w-48 opacity-90" />
-      </div>
     </div>
   );
 }

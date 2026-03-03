@@ -1,16 +1,15 @@
 project_id = "ctnsworqzzguykzzvdme"
 
-[functions.spotify-search]
-verify_jwt = false
-
-[functions.scrape-chartmasters]
-verify_jwt = false
-
-[functions.accept-invite]
-verify_jwt = false
-
-[functions.approve-split]
-verify_jwt = false
-
-[functions.send-split-approval]
-verify_jwt = false
+[functions]
+  [functions.accept-invite]
+    verify_jwt = false
+  [functions.approve-split]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.scrape-chartmasters]
+    verify_jwt = false
+  [functions.send-split-approval]
+    verify_jwt = false
+  [functions.spotify-search]
+    verify_jwt = false

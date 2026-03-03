@@ -1,154 +1,76 @@
 
 
-# Onboarding Restructure + Finance Tab + Role-Based Landing
+# Seed Comprehensive Dummy Data for $500K Record Label
 
-## Overview
+## Current State
+- Team "Club Hous" (`c6bed68e-7740-4b31-af16-b619126d1fe6`) has 6 artists, 3 real users, 1 staff_employment record (no salary), 0 company expenses, 6 budget categories (all $0), and existing artist budgets for 4 artists.
+- The Finance tab shows no meaningful data because amounts are zero or missing.
 
-Three workstreams: (1) merge redundant owner onboarding, (2) build a full Finance tab under Company, (3) restructure invited user onboarding with department-based routing.
+## Data Seeding Plan
 
----
+### 1. Update Team Annual Budget
+Set `annual_budget = 500000` ($500K label).
 
-## 1. Owner Onboarding (`Onboarding.tsx`)
+### 2. Company Budget Categories
+Update the 6 existing categories with realistic budgets:
+- Staff Payroll: $240,000
+- Marketing: $60,000
+- Software & Tools: $18,000
+- Office & Rent: $48,000
+- Travel & Entertainment: $36,000
+- Legal & Accounting: $24,000
 
-Current: 5 steps (Welcome → Your Info → Company Details → Get Organized → Start with a Task).
-New: 7 steps — insert Add Artists (step 4) and Invite Team (step 5) between Company Details and Get Organized.
+### 3. Staff Employment (20 records)
+**Limitation**: `staff_employment.user_id` is required. Only 3 real users exist. I'll create 20 staff records using generated UUIDs — the payroll table will show "Unknown" for names but all salary/retainer figures will render correctly in KPIs and totals.
 
-| Step | Content |
-|------|---------|
-| 1 | Welcome (unchanged) |
-| 2 | Your Info (unchanged) |
-| 3 | Company Details (unchanged) |
-| 4 | **Add Artists** — reuse `StepAddArtists` (needs teamId from step 3) |
-| 5 | **Invite Team** — revised `StepInviteMembers` |
-| 6 | Get Organized (unchanged, renumbered) |
-| 7 | Start with a Task — "Let's go" sets `onboarding_completed = true` on team |
+**10 W-2 Employees** (total ~$180K/yr):
+- Head of A&R: $45,000
+- Marketing Director: $40,000  
+- Creative Director: $38,000
+- A&R Coordinator: $30,000
+- Social Media Manager: $28,000
+- Finance Manager: $35,000
+- Operations Manager: $32,000
+- Content Producer: $28,000
+- Tour Coordinator: $26,000
+- Admin Assistant: $22,000
 
-**Invite step (step 5) changes to `StepInviteMembers.tsx`:**
-- Required fields: first name, last name, email or phone, job title
-- Optional fields: salary, employment type (W-2/1099), artist access with "All Artists" toggle
-- Primary action: "Send Invite" (calls `send-invite-notification` edge function), secondary: "Copy Link"
-- Add `invitee_email` and `invitee_phone` columns to `invite_links` table
+**10 1099 Contractors** (total ~$5K/mo = $60K/yr):
+- Graphic Designer: $800/mo
+- Videographer: $700/mo
+- Mixing Engineer: $600/mo
+- PR Consultant: $500/mo
+- Web Developer: $450/mo
+- Photographer: $400/mo
+- Radio Promoter: $350/mo
+- Stylist: $300/mo
+- Session Musician: $250/mo
+- Social Media Freelancer: $200/mo
 
-On step 7 finish, set `onboarding_completed = true` so the Build Your Company wizard is gated.
+### 4. Company Expenses (~30 records)
+Spread across the 6 categories over the past 6 months. Realistic line items: Slack subscription, Adobe CC, studio rent, flight to SXSW, attorney retainer, Meta ads, etc.
 
-## 2. Build Your Company → Budget-Only
+### 5. Artist Revenue & Expense Scenario
 
-Strip `CompanyOnboardingWizard.tsx` to just 2 steps: budget setup + completion. Remove company type, profile, artists, and invite steps. Show on Overview only if `onboarding_completed = true` AND `annual_budget` is null/0. Only for team owners (check membership role).
+| Artist | Budget | Revenue | Expenses | Net | Profile |
+|--------|--------|---------|----------|-----|---------|
+| Pote Baby | $75K | $120K | $62K | +$58K | Star artist, profitable |
+| SMV | $66K | $85K | $48K | +$37K | Solid earner, profitable |
+| Jurp | $54.5K | $35K | $52K | -$17K | Revenue but not profitable |
+| Doogie | $35K | $18K | $30K | -$12K | Revenue but not profitable |
+| The Weeknd | $0 (add $25K) | $0 | $15K | -$15K | New signing, no revenue yet |
 
-## 3. Finance Tab under Company
+For each artist: 10-20 transaction records (mix of expenses and revenue), spanning the past 6 months, linked to their existing budget categories where possible. Include 3-5 "pending" approval transactions to show the approval workflow.
 
-Add a fourth pill tab: **Dashboard | Agenda | Staff | Finance**
+### 6. Budgets for The Weeknd
+Add 4 budget categories: Recording ($12K), Marketing ($6K), Content ($4K), Travel ($3K).
 
-The Finance tab is a fixed, non-draggable layout with full CRUD capabilities. Unlike the Dashboard's widget grid, this is a structured finance workspace.
-
-### Layout (top to bottom):
-
-**A. Date Range Filter Bar**
-Global date range selector (Month / Quarter / YTD / Custom) that filters all sections below.
-
-**B. Financial KPIs** (read-only summary)
-- Total Budget, Total Revenue, Total Spending, Net P&L, Burn Rate, Runway (months remaining at current spend pace)
-- Reuse `KpiCardsSection` with two new cards for burn rate and runway
-
-**C. Company Expenses** (editable)
-- Full ledger of company-level expenses from `company_expenses` table
-- Add/edit/delete rows inline (description, amount, date, category, recurring flag)
-- Category breakdown subtotals
-- CSV export button
-
-**D. Staff Payroll Overview** (editable)
-- Table of all staff with employment type, salary/retainer, employer costs
-- Inline editing of salary figures
-- Total monthly/annual payroll cost
-
-**E. Artist Financial Drill-Down** (expandable, editable)
-- Accordion list of all artists, sorted by budget size
-- Each artist expands to show their full `transactions` ledger (expenses + revenue)
-- Inline add/edit/delete transactions
-- Per-artist budget vs actual, category breakdown
-- Expense approval: pending expenses show approve/deny buttons (new `approval_status` column on `transactions`)
-
-**F. Quarterly P&L**
-- Reuse `QuarterlyPnlSection`, filtered by the global date range
-
-**G. Spending Per Act**
-- Reuse `SpendingPerActSection`
-
-**H. Company Budget Settings**
-- Inline version of `CompanyBudgetSection` (not in a sheet)
-
-**I. Export**
-- "Export to CSV" button that downloads all visible financial data
-
-### Database changes for Finance tab:
-- Add `approval_status` column to `transactions` table (text, default 'approved', values: 'pending', 'approved', 'denied')
-- Add `approved_by` column to `transactions` (uuid, nullable)
-- Add `approved_at` column to `transactions` (timestamptz, nullable)
-
-## 4. Invited User Onboarding (`JoinTeam.tsx`)
-
-Current: auth → profile name → accept invite → done (navigate to /roster).
-New: auth → confirm name + photo → personal details → confirm artists → welcome + department routing.
-
-| Step | Content |
-|------|---------|
-| 1 | Auth (login/signup) — unchanged |
-| 2 | Confirm name (pre-filled from invite's `invitee_name`) + optional profile photo upload |
-| 3 | Personal details (optional, skippable) — preferred airline, KTN, TSA PreCheck, preferred seat, shirt/pant/shoe size, dietary restrictions |
-| 4 | Confirm artist team assignments (read-only list with checkmarks from invite data) |
-| 5 | "Welcome to {team}" — "Get Started" routes to department |
-
-**Department routing** (based on `invitee_job_title`):
-- A&R, Marketing, Creative Director → `/roster` (A&R Signings tab)
-- Finance, Operations → `/overview?tab=finance`
-- Manager → `/roster`
-- Other/default → `/roster`
-
-### Database changes for invited user:
-- Add personal info columns to `profiles`: `preferred_airline`, `ktn_number`, `tsa_precheck_number`, `preferred_seat`, `shirt_size`, `pant_size`, `shoe_size`, `dietary_restrictions`
-
-## 5. Database Migrations (Summary)
-
-**Migration 1 — profiles personal info:**
-```sql
-ALTER TABLE profiles ADD COLUMN preferred_airline text;
-ALTER TABLE profiles ADD COLUMN ktn_number text;
-ALTER TABLE profiles ADD COLUMN tsa_precheck_number text;
-ALTER TABLE profiles ADD COLUMN preferred_seat text;
-ALTER TABLE profiles ADD COLUMN shirt_size text;
-ALTER TABLE profiles ADD COLUMN pant_size text;
-ALTER TABLE profiles ADD COLUMN shoe_size text;
-ALTER TABLE profiles ADD COLUMN dietary_restrictions text;
-```
-
-**Migration 2 — invite_links contact info:**
-```sql
-ALTER TABLE invite_links ADD COLUMN invitee_email text;
-ALTER TABLE invite_links ADD COLUMN invitee_phone text;
-```
-
-**Migration 3 — transactions approval:**
-```sql
-ALTER TABLE transactions ADD COLUMN approval_status text NOT NULL DEFAULT 'approved';
-ALTER TABLE transactions ADD COLUMN approved_by uuid;
-ALTER TABLE transactions ADD COLUMN approved_at timestamptz;
-```
-
-## 6. Edge Function: `send-invite-notification`
-
-New edge function that receives `{ token, email?, phone?, team_name, invitee_name }` and sends an email with the invite link (`https://rollout.cc/join/{token}`). Uses Resend for email delivery (will need `RESEND_API_KEY` secret).
-
-## Files to Create
-- `supabase/functions/send-invite-notification/index.ts`
-- `src/components/overview/FinanceContent.tsx` — Finance tab layout component
-
-## Files to Modify
-- `src/pages/Onboarding.tsx` — 5→7 steps, add artists + invite steps, set `onboarding_completed` on finish
-- `src/components/onboarding/StepInviteMembers.tsx` — add email/phone required fields, "Send Invite" + "Copy Link", "All Artists" toggle
-- `src/components/onboarding/CompanyOnboardingWizard.tsx` — strip to budget-only (2 steps)
-- `src/pages/Overview.tsx` — add "finance" tab, render `FinanceContent` when selected, update gate logic
-- `src/pages/JoinTeam.tsx` — multi-step onboarding: name+photo, personal details, artist confirm, department routing
-- `src/components/overview/BuildYourCompany.tsx` — conditionally show only for owners without budget
-- `src/components/overview/KpiCardsSection.tsx` — add burn rate + runway cards
-- 3 database migrations
+## Execution
+All done via data INSERT/UPDATE statements using the insert tool (not migrations). Approximately:
+- 1 team UPDATE
+- 6 category UPDATEs  
+- 20 staff_employment INSERTs
+- ~30 company_expense INSERTs
+- 4 budget INSERTs (The Weeknd)
+- ~80 transaction INSERTs
 

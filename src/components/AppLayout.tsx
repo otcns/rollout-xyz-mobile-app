@@ -31,15 +31,18 @@ export function AppLayout({ children, title, actions }: AppLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex h-svh w-full overflow-hidden">
         {!isMobile && (
           <AppSidebar selectedTeamId={selectedTeamId} onSelectTeam={setSelectedTeamId} />
         )}
 
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Top bar — safe-area-top pads out the notch / Dynamic Island */}
-          <header className="sticky top-0 z-40 border-b border-border bg-background safe-area-top">
-          <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Top bar — safe-area-top pads out the notch / Dynamic Island.
+              Not sticky — it stays put naturally as the flex column header,
+              which also avoids an iOS/WKWebView bug where sticky-header buttons
+              stop receiving touch events after the page scrolls. */}
+          <header className="shrink-0 z-40 border-b border-border bg-background safe-area-top">
+          <div className="flex h-14 items-center justify-between px-3 sm:px-6">
             <div className="flex items-center gap-2">
               {isMobile && teams.length > 0 ? (
                 <DropdownMenu>
@@ -89,8 +92,9 @@ export function AppLayout({ children, title, actions }: AppLayoutProps) {
           </div>
           </header>
 
-          {/* Content — pb-safe-nav on mobile clears the bottom nav + home indicator */}
-          <main className="flex-1 p-4 sm:p-6 pb-safe-nav sm:pb-6 overflow-x-hidden min-w-0">
+          {/* Content — main is now the scroll container so the header never
+              "moves" during scroll, keeping touch targets reliably hittable. */}
+          <main data-scroll-container className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 pb-safe-nav sm:pb-6 min-w-0">
             {children}
           </main>
         </div>

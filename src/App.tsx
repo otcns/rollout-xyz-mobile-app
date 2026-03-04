@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TeamProvider } from "@/contexts/TeamContext";
 import { useTeams } from "@/hooks/useTeams";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Capacitor } from "@capacitor/core";
 
 // Lazy-loaded pages
 const Login = React.lazy(() => import("./pages/Login"));
@@ -72,7 +73,8 @@ function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
   if (user) return <Navigate to="/roster" replace />;
-  window.location.href = "https://rollout.cc";
+  if (Capacitor.isNativePlatform()) return <Navigate to="/login" replace />;
+  window.location.href = "https://app.rollout.cc";
   return null;
 }
 

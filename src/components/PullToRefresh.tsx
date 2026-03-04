@@ -20,7 +20,9 @@ export function PullToRefresh({ onRefresh, children, className }: PullToRefreshP
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (isRefreshing) return;
-    const scrollTop = containerRef.current?.scrollTop ?? 0;
+    // Walk up to find the nearest scrollable ancestor (the <main> scroll container)
+    const scrollParent = containerRef.current?.closest("[data-scroll-container]") as HTMLElement | null;
+    const scrollTop = scrollParent ? scrollParent.scrollTop : (containerRef.current?.scrollTop ?? 0);
     if (scrollTop <= 0) {
       startY.current = e.touches[0].clientY;
       pulling.current = true;
